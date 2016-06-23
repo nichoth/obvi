@@ -10,13 +10,9 @@ Observable state machine
 
 ```js
 var Model = require('obvi')
-var EventEmitter = require('events').EventEmitter
-var bus = new EventEmitter()
 
-// pass in event handlers and initial state
-var ExampleModel = Model({
+var exampleModel = Model({
     'increment': function (state, event) {
-        // return state object
         return { count: state.count + 1 }
     },
     'add': function (state, event) {
@@ -24,19 +20,12 @@ var ExampleModel = Model({
     }
 }, { count: 0 })
 
-// pass an event emitter
-var exampleModel = ExampleModel(bus)
-
-// listen to changes
 exampleModel(function onChange (state) {
     console.log('change', state)
 })
 
-bus.emit('increment')
-bus.emit('add', { value: 10 })
-
-// get current state
-exampleModel()
+exampleModel.emit('increment')
+exampleModel.emit('add', { value: 10 })
 ```
 
 The model is an instance of `observ`, and can be composed normally:
@@ -44,15 +33,6 @@ The model is an instance of `observ`, and can be composed normally:
 ```js
 var Struct = require('observ-struct')
 var struct = Struct({
-    foo: model
+    foo: exampleModel
 })
-```
-
-Partially apply in various ways:
-
-```js
-var Model = require('obvi')
-var model = Model(hash)(initState)(bus)
-var model = Model(hash, initState)(bus)
-var model = Model(hash, initState, bus)
 ```
