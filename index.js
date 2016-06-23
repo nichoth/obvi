@@ -1,5 +1,4 @@
 var struct = require('observ-struct')
-var xtend = require('xtend')
 
 module.exports = Model
 
