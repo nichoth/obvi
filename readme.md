@@ -11,6 +11,9 @@ Observable state machine
 ```js
 var Model = require('obvi')
 
+// first arg is a map of event names to static functions that return
+// updated state
+// second arg is initial state
 var exampleModel = Model({
     'increment': function (state, event) {
         return { count: state.count + 1 }
@@ -26,6 +29,8 @@ exampleModel(function onChange (state) {
 
 exampleModel.emit('increment')
 exampleModel.emit('add', { value: 10 })
+// => { count: 1 }
+// => { count: 11 }
 ```
 
 The model is an instance of `observ`, and can be composed normally:
