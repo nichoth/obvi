@@ -1,19 +1,37 @@
-var Model = require('../')
+var Store = require('../');
+var EE = require('events').EventEmitter;
 
-var exampleModel = Model({
-    'increment': function (state, event) {
-        return { count: state.count + 1 }
+// observable state from discrete events
+var store = Store({ count: 0 });
+
+var subscribe = store({
+    add: function (state, event) {
+        return { count: state.count + event.value };
     },
-    'add': function (state, event) {
-        return { count: state.count + event.value }
+    increment: function (state, event) {
+        return { count: state.count + 1 };
     }
-}, { count: 0 })
+});
 
-exampleModel(function onChange (state) {
-    console.log('change', state)
-})
+var emitter = new EE();
+var unsubscribe = subscribe(emitter);
 
-exampleModel.emit('increment')
-exampleModel.emit('add', { value: 10 })
+// store.state is an instance of `observ-struct`
+store.state(function onChange (data) {
+    console.log('change', data);
+});
 
-module.exports = exampleModel
+emitter.emit('increment');
+emitter.emit('add', { value: 10 })
+
+// here we consume the same events, but handle them differently
+subscribeToSomethingElse = store({
+    add: function (state, event) {
+        return { count: state.count + event.value * 2 };
+    }
+});
+
+var anotherEmitter = new EE();
+subscribeToSomethingElse(anotherEmitter);
+anotherEmitter.emit('add', { value: 3 });
+

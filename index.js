@@ -1,22 +1,38 @@
-var struct = require('observ-struct')
+var struct = require('observ-struct');
 
-module.exports = Model
+// (observ, object, ee) => fn unsubscribe
+function Subscribe (state, actions, emitter) {
+    var eventNames = Object.keys(actions);
+    var evHandlers = eventNames.reduce(function (acc, name) {
+        acc[name] = function (ev) {
+            var newState = actions[name](state(), ev);
+            state.set(newState);
+        };
+        return acc;
+    }, {});
 
-function Model (hash, initState) {
-    var state = struct(initState)
-    hash = hash || {};
+    eventNames.forEach(function (name) {
+        emitter.on(name, evHandlers[name]);
+    });
 
-    function model () {
-        return state.apply(null, arguments)
-    }
-
-    model.emit = function (action) {
-        if (hash[action]) {
-            var args = [state()].concat([].slice.call(arguments, 1))
-            state.set(hash[action].apply(null, args))
-        }
-    }
-
-    return model
+    return function unsubscribe () {
+        eventNames.forEach(function (name) {
+            emitter.removeListener(name, evHandlers[name]);
+        });
+    };
 }
 
+// (object) => fn store
+function Store (initState) {
+    var state = struct(initState);
+
+    // (object) => fn subscribe
+    function store (actions) {
+        return Subscribe.bind(null, state, actions);
+    }
+
+    store.state = state;
+    return store;
+}
+
+module.exports = Store;
