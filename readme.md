@@ -1,45 +1,67 @@
 # obvi
 
-Observable state machine
+Observable state machine. Use pure functions to update state, subscribe to changes with 'observ-struct` interface.
+
+## install
+
+    $ npm install obvi
 
 ## example
 
 ```js
-var Store = require('obvi');
-var EE = require('events').EventEmitter;
+var test = require('tape');
+var Store = require('../');
 
-// observable state from discrete events
-// (object initialState) => fn subscribe
 var store = Store({ count: 0 });
+var unsubscribe;
 
-var subscribe = store({
-    add: function (state, event) {
-        return { count: state.count + event.value };
-    },
-    increment: function (state, event) {
-        return { count: state.count + 1 };
-    }
+test('obvi', function (t) {
+    t.plan(6);
+
+    var pushEvent = store({
+        add: function (state, event) {
+            t.deepEqual(event, { value: 2 },
+                'should map add event');
+            t.deepEqual(state, { count: 0 }, 'should pass previous state');
+            return { count: state.count + event.value };
+        },
+        increment: function (state, event) {
+            t.deepEqual(event, { type: 'increment' },
+                'should map increment event');
+            t.deepEqual(state, { count: 2 }, 'should update state');
+            return { count: state.count + 1 };
+        }
+    });
+
+    var called = 0;
+    unsubscribe = store.state(function onChange (state) {
+        if (called === 0) {
+            t.deepEqual(state, { count: 2 }, 'should emit new state');
+        }
+        if (called === 1) {
+            t.deepEqual(state, { count: 3 }, 'should emit new state');
+        }
+        called++;
+    });
+
+    pushEvent('add', { value: 2 });
+    pushEvent('increment', { type: 'increment' });
 });
 
-var emitter = new EE();
-var unsubscribe = subscribe(emitter);
+test('events have separate channels', function (t) {
+    t.plan(1);
+    unsubscribe();
+    var push = store({
+        increment: function (state, ev) {
+            return { count: state.count + 10 };
+        }
+    });
 
-// store.state is an instance of `observ-struct`
-store.state(function onChange (data) {
-    console.log('change', data);
+    unsubscribe = store.state(function onChange (state) {
+        t.deepEqual(state, { count: 13 },
+            'should handle separate event channels');
+    });
+
+    push('increment')
 });
-
-emitter.emit('increment');
-emitter.emit('add', { value: 10 })
-
-// here we consume the same events, but handle them differently
-subscribeToSomethingElse = store({
-    add: function (state, event) {
-        return { count: state.count + event.value * 2 };
-    }
-});
-
-var anotherEmitter = new EE();
-subscribeToSomethingElse(anotherEmitter);
-anotherEmitter.emit('add', { value: 3 });
 ```
