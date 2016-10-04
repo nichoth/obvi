@@ -15,7 +15,8 @@
     "tape": "^4.6.2"
   },
   "scripts": {
-    "postversion": "git push && git push --tags",
+    "preversion": "npm test",
+    "postversion": "git push && git push --tags && npm publish",
     "test": "tape test/index.js | tap-spec"
   },
   "repository": {
